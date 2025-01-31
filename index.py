@@ -114,11 +114,11 @@ class Searcher:
 def documents():
     return load_documents('data.json')
 
-docs = documents()
+#docs = documents()
 
-indexer = Indexer()
-indexer.add_documents(docs)
-indexer.save('data.json')
+#indexer = Indexer()
+#indexer.add_documents(docs)
+#indexer.save('data.json')
 
 
 def get_similar(query):
