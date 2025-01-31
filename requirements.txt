@@ -3,3 +3,10 @@ aiologger[aiofiles]
 pip-chill
 uvicorn
 gunicorn
+openai
+langchain_openai
+langchain_community
+python-dotenv
+langchain
+tavily-python
+bs4py

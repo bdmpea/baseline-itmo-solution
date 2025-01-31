@@ -1,10 +1,13 @@
 import time
 from typing import List
+from ag import agent_with_chat_history
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import HttpUrl
 from schemas.request import PredictionRequest, PredictionResponse
 from utils.logger import setup_logger
+import os
+# from openai import OpenAI
 
 # Initialize
 app = FastAPI()
@@ -53,17 +56,27 @@ async def log_requests(request: Request, call_next):
 async def predict(body: PredictionRequest):
     try:
         await logger.info(f"Processing prediction request with id: {body.id}")
+
         # Здесь будет вызов вашей модели
         answer = 1  # Замените на реальный вызов модели
         sources: List[HttpUrl] = [
             HttpUrl("https://itmo.ru/ru/"),
             HttpUrl("https://abit.itmo.ru/"),
         ]
+        ex = "В каком городе находится главный кампус Университета ИТМО?\n1. Москва\n2. Санкт-Петербург\n3. Екатеринбург\n4. Нижний Новгород"
+
+
+        response = agent_with_chat_history.invoke(
+            {"input": ex},
+            config={"configurable": {"session_id": "test-session"}},
+        )
+        print("response:", response)
+        
 
         response = PredictionResponse(
             id=body.id,
             answer=answer,
-            reasoning="Из информации на сайте",
+            reasoning="no",
             sources=sources,
         )
         await logger.info(f"Successfully processed request {body.id}")
