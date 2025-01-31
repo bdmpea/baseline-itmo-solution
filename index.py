@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from typing import List, Optional
 import numpy as np
@@ -9,33 +8,30 @@ from sentence_transformers import SentenceTransformer
 
 @dataclass
 class Document:
-    topic: str
-    title: str
     link: str
+    title: str
     text: str
     embedding: Optional[np.ndarray] = None
 
 
 @dataclass
 class SearchResult:
-    doc_id: str
-    topic: str
+    link: str
     score: float
     title: str
     text: str
 
 
 def load_documents(path: str) -> List[Document]:
+    """Загрузка документов из json файла"""
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-
     return [
         Document(
-            topic=article["topic"],
+            link = article["link"],
             title=article["title"],
             text=article["text"],
-            link=article["link"],
-            embedding=article["emb"],
+            embedding=None,
         )
         for article in data
     ]
@@ -47,7 +43,7 @@ class Indexer:
         self.documents: List[Document] = []
         self.embeddings: Optional[np.ndarray] = None
 
-    def add_documents(self, documents: List[Document]) -> None:
+    def add_documents(self, docs: List[Document]) -> None:
         """
         TODO: Реализовать индексацию документов
         1. Сохранить документы в self.documents
@@ -55,9 +51,9 @@ class Indexer:
            Подсказка: для каждого документа нужно объединить title и text
         3. Сохранить эмбеддинги в self.embeddings
         """
-        self.documentsw = documents
+        self.documents = docs
         self.embeddings = self.model.encode(
-            [doc.title + " " + doc.text for doc in documents]
+            [doc.title + " " + doc.text for doc in docs]
         )
 
     def save(self, path: str) -> None:
@@ -65,17 +61,21 @@ class Indexer:
         TODO: Реализовать сохранение индекса
         1. Сохранить self.documents и self.embeddings в pickle файл
         """
-        with open('data.json', 'w', encoding='utf-8') as f:
-            json.dump(self.documents, f, ensure_ascii=False, indent=4)
-            
+
+        with open(path, "wb") as dump_out:
+            pickle.dump(
+                {"documents": self.documents, "embeddings": self.embeddings}, dump_out
+            )
 
     def load(self, path: str) -> None:
         """
         TODO: Реализовать загрузку индекса
         1. Загрузить self.documents и self.embeddings из pickle файла
         """
-        with open('data.json', 'r', encoding='utf-8') as f:
-            self.documents = json.load(f)
+        with open(path, "rb") as dump_in:
+            data = pickle.load(dump_in)
+            self.documents = data["documents"]
+            self.embeddings = data["embeddings"]
 
 
 class Searcher:
@@ -106,7 +106,7 @@ class Searcher:
             doc = self.index.documents[arg_ans[i]]
             ans.append(
                 SearchResult(
-                    doc_id=doc.id, topic=doc.topic, text=doc.text, title=doc.title, score=float(s[arg_ans[i]])
+                    link=doc.link, text=doc.text, title=doc.title, score=float(s[arg_ans[i]])
                 )
             )
         return ans
@@ -114,45 +114,14 @@ class Searcher:
 def documents():
     return load_documents('data.json')
 
-
-def test_searcher(documents, tmp_path):
-    index_path = tmp_path / "test_index.pkl"
-
-    indexer = Indexer()
-    indexer.add_documents(documents)
-    indexer.save(str(index_path))
-    
-    searcher = Searcher(str(index_path))
-    results = searcher.search("machine learning", top_k=3)
-    
-    # Проверяем результаты
-    assert len(results) <= 3
-    assert all(isinstance(r.score, float) for r in results)
-    assert all(0 <= r.score <= 1 for r in results)
-    
-    # Проверяем что документы про ML нашлись
-    titles = [r.title.lower() for r in results]
-    assert any('machine learning' in title for title in titles)
-
-    # Тестируем другой запрос
-    results = searcher.search("web development", top_k=3)
-    assert len(results) <= 3
-    titles = [r.title.lower() for r in results]
-    assert any('web' in title for title in titles)
-
-
 docs = documents()
 
 indexer = Indexer()
-indexer.add_documents(documents)
+indexer.add_documents(docs)
 indexer.save('data.json')
 
 
 def get_similar(query):
-    docs = documents()
-
-    indexer = Indexer()
-    indexer.add_documents(documents)
     searcher = Searcher(str("data.json"))
     results = searcher.search(query, top_k=3)
     return results

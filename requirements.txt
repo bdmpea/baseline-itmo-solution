@@ -8,5 +8,6 @@ langchain_openai
 langchain_community
 python-dotenv
 langchain
+beautifulsoup4
 tavily-python
-bs4py
+sentence-transformers

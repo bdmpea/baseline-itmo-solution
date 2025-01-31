@@ -56,8 +56,7 @@ def get_middle_answer(query: str) -> str:
 
 
 def get_news(query: str) -> str:
-    #return get_similar(query)
-    return
+    return get_similar(query)
 
 
 tools = [
@@ -180,3 +179,4 @@ agent_with_chat_history = RunnableWithMessageHistory(
     input_messages_key="input",
     history_messages_key="chat_history",
 )
+

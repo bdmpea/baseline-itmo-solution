@@ -57,26 +57,33 @@ async def predict(body: PredictionRequest):
     try:
         await logger.info(f"Processing prediction request with id: {body.id}")
 
-        # Здесь будет вызов вашей модели
-        answer = 1  # Замените на реальный вызов модели
+        answer = 1 
         sources: List[HttpUrl] = [
             HttpUrl("https://itmo.ru/ru/"),
             HttpUrl("https://abit.itmo.ru/"),
         ]
-        ex = "В каком городе находится главный кампус Университета ИТМО?\n1. Москва\n2. Санкт-Петербург\n3. Екатеринбург\n4. Нижний Новгород"
 
 
         response = agent_with_chat_history.invoke(
-            {"input": ex},
+            {"input": body.query},
             config={"configurable": {"session_id": "test-session"}},
         )
-        print("response:", response)
+        if 'answer' in response:
+            answer = response.answer
+        if 'links' in response:
+            sources = List[HttpUrl] = [HttpUrl(i) for i in response.links]
+        if 'reasoning' in response:
+            reasoning = response.reasoning + "\n Used gpt4o-mini for generation answer"
+        else:
+            reasoning = "Used gpt4o-mini for generation answer"
+
+        
         
 
         response = PredictionResponse(
             id=body.id,
             answer=answer,
-            reasoning="no",
+            reasoning=reasoning,
             sources=sources,
         )
         await logger.info(f"Successfully processed request {body.id}")
